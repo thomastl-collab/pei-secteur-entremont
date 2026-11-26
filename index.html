@@ -303,7 +303,7 @@ return `<div class="stat"><span>${esc(c.nom)}</span><span class="bar" title="${k
 const svg=$('#map'),wrap=$('#wrap');
 let ext=null;const V={cx:0,cy:0,s:0.05};
 const bbox=rs=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;rs.forEach(r=>r.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}));return[x0,y0,x1,y1]};
-const fit=e=>{const W=wrap.clientWidth,H=wrap.clientHeight;V.cx=(e[0]+e[2])/2;V.cy=(e[1]+e[3])/2;V.s=Math.min(W/Math.max(e[2]-e[0],200),H/Math.max(e[3]-e[1],200))*0.9};
+let pendingFit=null;const fit=e=>{const W=wrap.clientWidth,H=wrap.clientHeight;if(!W||!H){pendingFit=e;return}pendingFit=null;V.cx=(e[0]+e[2])/2;V.cy=(e[1]+e[3])/2;V.s=Math.min(W/Math.max(e[2]-e[0],200),H/Math.max(e[3]-e[1],200))*0.9};
 const P=(x,y)=>[(x-V.cx)*V.s+wrap.clientWidth/2,-(y-V.cy)*V.s+wrap.clientHeight/2];
 const U=(sx,sy)=>[(sx-wrap.clientWidth/2)/V.s+V.cx,-(sy-wrap.clientHeight/2)/V.s+V.cy];
 const col=st=>`var(--${st==='D'?'ok':st==='N'?'nc':st==='X'?'del':'ko'})`;
@@ -472,7 +472,7 @@ wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',e=>{
 
 ext=bbox(COM.flatMap(c=>c.mr));
 $('#fbm').value=F.bm;if(!HOST)$('#bmBox').style.display='none';$('#fbm').onchange=e=>{F.bm=e.target.value;all()};fit(ext);
-const ro=new ResizeObserver(()=>draw());ro.observe(wrap);
+const ro=new ResizeObserver(()=>{if(pendingFit)fit(pendingFit);draw()});ro.observe(wrap);
 merge();stats();det();near();log();all();
 if(F.com){const c=COM.find(c=>c.code===F.com);if(c){fit(bbox(c.mr));draw()}}
 }
