@@ -10,6 +10,7 @@ Carte et outil de suivi des points d'eau incendie (DECI) de Saint-Pierre-d'Entre
 ## Fonctions
 
 - Carte du secteur : statut de chaque PEI (disponible, non conforme, indisponible), rayons de 200 m et 400 m, PEI les plus proches d'un point d'intervention
+- Fond de carte au choix : Plan IGN, photos aériennes IGN ou OpenStreetMap
 - Fiche détaillée de chaque PEI, avec liens Google Maps et Waze
 - Correction d'un PEI existant, création d'un nouveau PEI, demande de suppression
 - Export CSV des modifications (séparateur `;`, s'ouvre dans Excel) pour envoi au SDIS
@@ -22,6 +23,7 @@ Les modifications saisies sur le site sont enregistrées **dans le navigateur de
 |---|---|---|
 | PEI de l'Orne | Carte publique REMOcRA du SDIS 61 (remocra.sdis61.fr) | Aucune licence de réutilisation affichée |
 | PEI du Calvados | [DECI – Calvados – SDIS14](https://www.data.gouv.fr/datasets/deci-calvados-sdis14) | Licence Ouverte |
+| Fonds de carte | IGN Géoplateforme (Plan IGN, photos aériennes), © contributeurs OpenStreetMap | Licence Ouverte / ODbL |
 | Contours des communes | [geo.api.gouv.fr](https://geo.api.gouv.fr) | Licence Ouverte |
 
 Extraction du 26/11/2026. Ces données sont une copie figée, **non opérationnelle** : seuls les outils du SDIS font foi.

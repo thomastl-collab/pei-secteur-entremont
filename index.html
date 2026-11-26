@@ -46,6 +46,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .hint{position:absolute;left:10px;bottom:10px;font-size:13px;color:var(--mute);background:color-mix(in srgb,var(--paper) 88%,transparent);padding:4px 8px;border-radius:6px;max-width:calc(100% - 150px)}
 .banner{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:var(--red);color:#fff;font-weight:600;padding:8px 12px;border-radius:8px;display:none;gap:10px;align-items:center;max-width:calc(100% - 90px)}
 .banner.on{display:flex}.banner button{background:#fff;color:var(--red);border:0;border-radius:6px;font:600 14px Barlow;min-height:36px;padding:0 10px;cursor:pointer}
+.attr{position:absolute;right:10px;bottom:50px;font-size:11px;color:var(--mute);background:color-mix(in srgb,var(--paper) 85%,transparent);padding:1px 6px;border-radius:4px}.attr a{color:inherit}
 .leg{position:absolute;left:10px;top:10px;background:color-mix(in srgb,var(--paper) 92%,transparent);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.7}
 aside{display:flex;flex-direction:column;gap:14px}
 aside .card{padding:14px 16px}
@@ -135,6 +136,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
    <button id="zout" aria-label="Dézoomer">−</button>
    <button id="zall" aria-label="Vue d'ensemble" style="font-size:15px">⤢</button>
   </div>
+  <div class="attr" id="attr"></div>
   <div class="hint" id="hint">Touchez un PEI pour sa fiche, ou un endroit vide pour trouver les PEI les plus proches.</div>
  </section>
 
@@ -142,6 +144,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
   <div class="card det" id="det" aria-live="polite"></div>
   <div class="card">
    <h2>Filtres</h2>
+   <div id="bmBox"><label class="f" for="fbm">Fond de carte</label><select id="fbm"><option value="ign">Plan IGN</option><option value="ortho">Photos aériennes IGN</option><option value="osm">OpenStreetMap</option><option value="none">Aucun (contours des communes)</option></select></div>
    <label class="f" for="fcom">Commune</label>
    <select id="fcom"></select>
    <label class="f" for="fq">Rechercher (numéro, adresse)</label>
@@ -228,8 +231,10 @@ const FIELDS=['id','k','nat','deci','adr','cpl','insee','ps','pd','q','dn','cap'
 const BASE=PEI.map(p=>({...p}));const BMAP={};BASE.forEach(p=>BMAP[p.id]=p);
 let ED={};          /* doc id -> stored record */
 let LIST=BASE;      /* merged view */
-const F={com:'',q:'',st:{D:true,N:true,I:true,X:true},ty:{PI:true,BI:true,PN:true,PA:true,DA:true},r200:false,r400:false,onlyEd:false};
+const HOST=typeof claude==='undefined';
+const F={bm:HOST?'ign':'none',com:'',q:'',st:{D:true,N:true,I:true,X:true},ty:{PI:true,BI:true,PN:true,PA:true,DA:true},r200:false,r400:false,onlyEd:false};
 try{const s=JSON.parse(localStorage.getItem('peiF')||'null');if(s)Object.assign(F,s,{q:''});F.st.X=F.st.X!==false}catch(e){}
+if(!HOST)F.bm='none';
 const save=()=>{try{localStorage.setItem('peiF',JSON.stringify(F))}catch(e){}};
 let sel=null,ip=null,mode=null,draft=null;
 const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)};
@@ -237,13 +242,22 @@ const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearT
 /* Lambert 93 <-> WGS84 (IGN algorithm, GRS80) */
 const L93={e:0.0818191910428158,n:0.725607765053267,C:11754255.426096,Xs:700000,Ys:12655612.049876,l0:3*Math.PI/180};
 const toLL=(X,Y)=>{const{e,n,C,Xs,Ys,l0}=L93,dx=X-Xs,dy=Y-Ys,R=Math.hypot(dx,dy),g=Math.atan(dx/-dy),lon=l0+g/n,Lt=-Math.log(R/C)/n;let p=2*Math.atan(Math.exp(Lt))-Math.PI/2;for(let i=0;i<12;i++){const s=e*Math.sin(p);p=2*Math.atan(((1+s)/(1-s))**(e/2)*Math.exp(Lt))-Math.PI/2}return[+(p*180/Math.PI).toFixed(6),+(lon*180/Math.PI).toFixed(6)]};
+const fromLL=(la,lo)=>{const{e,n,C,Xs,Ys,l0}=L93,p=la*Math.PI/180,s=e*Math.sin(p),L=Math.log(Math.tan(Math.PI/4+p/2)*((1-s)/(1+s))**(e/2)),Rr=C*Math.exp(-n*L),g=n*(lo*Math.PI/180-l0);return[Xs+Rr*Math.sin(g),Ys-Rr*Math.cos(g)]};
+const RE=6378137,PR=Math.PI*RE,K=Math.cos(48.85*Math.PI/180);
+const merc=(la,lo)=>[RE*lo*Math.PI/180,RE*Math.log(Math.tan(Math.PI/4+la*Math.PI/360))];
+const unmerc=(mx,my)=>[(2*Math.atan(Math.exp(my/RE))-Math.PI/2)*180/Math.PI,mx/RE*180/Math.PI];
+const m2l=(mx,my)=>{const[la,lo]=unmerc(mx,my);return fromLL(la,lo)};
+const l2m=(x,y)=>{const[la,lo]=toLL(x,y);return merc(la,lo)};
+const addM=p=>{const[a,b]=merc(+p.lat,+p.lon);p.mx=a;p.my=b;return p};
+COM.forEach(c=>{c.mr=c.rings.map(r=>r.map(([x,y])=>l2m(x,y)));c.ml=l2m(c.lab[0],c.lab[1])});
+BASE.forEach(addM);
 const inRing=(x,y,r)=>{let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const[xi,yi]=r[i],[xj,yj]=r[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c};
 const comAt=(x,y)=>{const c=COM.find(c=>c.rings.some(r=>inRing(x,y,r)));return c?c.code:null};
 
 /* merge base + edits */
 const merge=()=>{LIST=BASE.map(p=>{const e=ED[p.id];return e?{...p,...e.v,_e:e}:p});
  Object.values(ED).filter(e=>e.act==='cree').forEach(e=>LIST.push({...e.v,src:'new',_e:e}));
- if(sel)sel=LIST.find(p=>p.id===sel.id)||null};
+ LIST.forEach(p=>{if(p.mx==null)addM(p)});if(sel)sel=LIST.find(p=>p.id===sel.id)||null};
 const diff=p=>{const b=BMAP[p.id];if(!b)return['création'];return['k','deci','adr','cpl','ps','pd','q','dn','cap','st','ano','rop','ctp','x','y'].filter(k=>String(b[k]??'')!==String(p[k]??'')).map(k=>({k:'type',deci:'domanialité',adr:'adresse',cpl:'complément',ps:'pression statique',pd:'pression dynamique',q:'débit',dn:'diamètre',cap:'capacité',st:'disponibilité',ano:'anomalies',rop:'reconnaissance',ctp:'contrôle',x:'position',y:'position'}[k])).filter((v,i,a)=>a.indexOf(v)===i)};
 
 /* storage: shared db, else this device */
@@ -295,24 +309,30 @@ const U=(sx,sy)=>[(sx-wrap.clientWidth/2)/V.s+V.cx,-(sy-wrap.clientHeight/2)/V.s
 const col=st=>`var(--${st==='D'?'ok':st==='N'?'nc':st==='X'?'del':'ko'})`;
 const draw=()=>{
  const W=wrap.clientWidth,H=wrap.clientHeight;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
- let h='';
- COM.forEach(c=>{const d=c.rings.map(r=>'M'+r.map(([x,y])=>P(x,y).map(v=>v.toFixed(1)).join(',')).join('L')+'Z').join('');
-  h+=`<path d="${d}" fill="${F.com===c.code?'var(--comsel)':'var(--com)'}" stroke="var(--edge)" stroke-width="${F.com===c.code?2.2:1.2}" stroke-linejoin="round"/>`});
+ let h='';const sp=V.s/K,bm=F.bm!=='none';
+ if(bm){const z=Math.max(0,Math.min(19,Math.round(Math.log2(2*PR*V.s/256)))),n=2**z,sz=2*PR/n,[ux0,uy1]=U(0,0),[ux1,uy0]=U(W,H);
+  const tx0=Math.floor((ux0+PR)/sz),tx1=Math.floor((ux1+PR)/sz),ty0=Math.floor((PR-uy1)/sz),ty1=Math.floor((PR-uy0)/sz),px=sz*V.s;
+  if((tx1-tx0+1)*(ty1-ty0+1)<=120)for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++){if(ty<0||ty>=n)continue;const[a,b]=P(-PR+tx*sz,PR-ty*sz);h+=`<image href="${tile(z,((tx%n)+n)%n,ty)}" x="${a.toFixed(1)}" y="${b.toFixed(1)}" width="${(px+.6).toFixed(1)}" height="${(px+.6).toFixed(1)}" preserveAspectRatio="none"/>`}}
+ COM.forEach(c=>{const d=c.mr.map(r=>'M'+r.map(([x,y])=>P(x,y).map(v=>v.toFixed(1)).join(',')).join('L')+'Z').join('');
+  h+=`<path d="${d}" fill="${bm?(F.com===c.code?'rgba(255,190,120,.18)':'none'):F.com===c.code?'var(--comsel)':'var(--com)'}" stroke="${bm?'#7a1020':'var(--edge)'}" stroke-width="${F.com===c.code?2.6:bm?1.6:1.2}" stroke-dasharray="${bm?'7 4':''}" stroke-linejoin="round"/>`});
  const pts=LIST.filter(vis);
- [F.r400&&400,F.r200&&200].filter(Boolean).forEach(r=>{pts.filter(p=>p.st==='D'||p.st==='N').forEach(p=>{const[a,b]=P(p.x,p.y);h+=`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(r*V.s).toFixed(1)}" fill="var(--ring)" stroke="var(--ok)" stroke-opacity=".35" stroke-width="1"/>`})});
- COM.forEach(c=>{const[a,b]=P(c.lab[0],c.lab[1]);h+=`<text x="${a}" y="${b}" text-anchor="middle" font-family="Barlow Condensed" font-weight="700" font-size="${V.s>0.3?18:14}" fill="var(--mute)" paint-order="stroke" stroke="var(--com)" stroke-width="4" pointer-events="none">${esc(c.nom.toUpperCase())}</text>`});
- if(ip){const[a,b]=P(ip.x,ip.y);ip.list.forEach(p=>{const[c,d]=P(p.x,p.y);h+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="5 4"/>`})}
- const r=V.s>0.25?7:V.s>0.08?5.5:4.2;
- pts.forEach(p=>{const[a,b]=P(p.x,p.y);if(a<-20||b<-20||a>W+20||b>H+20)return;const S=sel&&sel.id===p.id,rs=S?r+3:r;
+ [F.r400&&400,F.r200&&200].filter(Boolean).forEach(r=>{pts.filter(p=>p.st==='D'||p.st==='N').forEach(p=>{const[a,b]=P(p.mx,p.my);h+=`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(r*sp).toFixed(1)}" fill="var(--ring)" stroke="var(--ok)" stroke-opacity=".35" stroke-width="1"/>`})});
+ COM.forEach(c=>{const[a,b]=P(c.ml[0],c.ml[1]);h+=`<text x="${a}" y="${b}" text-anchor="middle" font-family="Barlow Condensed" font-weight="700" font-size="${sp>0.3?18:14}" fill="${bm?'#7a1020':'var(--mute)'}" paint-order="stroke" stroke="${bm?'#fff':'var(--com)'}" stroke-width="4" pointer-events="none">${esc(c.nom.toUpperCase())}</text>`});
+ if(ip){const[a,b]=P(ip.mx,ip.my);ip.list.forEach(p=>{const[c,d]=P(p.mx,p.my);h+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="5 4"/>`})}
+ const r=sp>0.25?7:sp>0.08?5.5:4.2;
+ pts.forEach(p=>{const[a,b]=P(p.mx,p.my);if(a<-20||b<-20||a>W+20||b>H+20)return;const S=sel&&sel.id===p.id,rs=S?r+3:r;
   if(p._e)h+=`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${rs+5}" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="3 2.5" pointer-events="none"/>`;
   const sh=water(p.k)?`<rect x="${(a-rs).toFixed(1)}" y="${(b-rs).toFixed(1)}" width="${2*rs}" height="${2*rs}" rx="1.5"`:`<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${rs}"`;
   h+=`${sh} fill="${col(p.st)}" stroke="${S?'var(--ink)':'var(--paper)'}" stroke-width="${S?2.5:1.3}" data-id="${esc(p.id)}" style="cursor:pointer"/>`;
   if(p.st==='X')h+=`<path d="M${a-rs} ${b-rs}L${a+rs} ${b+rs}M${a+rs} ${b-rs}L${a-rs} ${b+rs}" stroke="var(--paper)" stroke-width="1.6" pointer-events="none"/>`;
-  if(V.s>0.35)h+=`<text x="${a+rs+6}" y="${b+4}" font-size="11" fill="var(--ink)" paint-order="stroke" stroke="var(--com)" stroke-width="3" pointer-events="none">${esc(String(p.id).replace(/^(\d{5})_/,'').replace(/^14174/,''))}</text>`});
- if(ip){const[a,b]=P(ip.x,ip.y);h+=`<g pointer-events="none" stroke="var(--red)" stroke-width="3"><line x1="${a-9}" y1="${b}" x2="${a+9}" y2="${b}"/><line x1="${a}" y1="${b-9}" x2="${a}" y2="${b+9}"/></g><circle cx="${a}" cy="${b}" r="13" fill="none" stroke="var(--red)" stroke-width="2" pointer-events="none"/>`}
- const m=[50,100,200,500,1000,2000,5000].find(v=>v*V.s>70)||5000,L=m*V.s;
+  if(sp>0.35)h+=`<text x="${a+rs+6}" y="${b+4}" font-size="11" font-weight="600" fill="${bm?'#111':'var(--ink)'}" paint-order="stroke" stroke="${bm?'#fff':'var(--com)'}" stroke-width="3" pointer-events="none">${esc(String(p.id).replace(/^(\d{5})_/,'').replace(/^14174/,''))}</text>`});
+ if(ip){const[a,b]=P(ip.mx,ip.my);h+=`<g pointer-events="none" stroke="var(--red)" stroke-width="3"><line x1="${a-9}" y1="${b}" x2="${a+9}" y2="${b}"/><line x1="${a}" y1="${b-9}" x2="${a}" y2="${b+9}"/></g><circle cx="${a}" cy="${b}" r="13" fill="none" stroke="var(--red)" stroke-width="2" pointer-events="none"/>`}
+ const m=[50,100,200,500,1000,2000,5000].find(v=>v*sp>70)||5000,L=m*sp;
  h+=`<g transform="translate(${W-L-16},${H-18})"><rect x="-6" y="-20" width="${L+12}" height="30" rx="5" fill="var(--paper)" opacity=".85"/><line x1="0" y1="0" x2="${L}" y2="0" stroke="var(--ink)" stroke-width="3"/><line x1="0" y1="-5" x2="0" y2="3" stroke="var(--ink)" stroke-width="2"/><line x1="${L}" y1="-5" x2="${L}" y2="3" stroke="var(--ink)" stroke-width="2"/><text x="${L/2}" y="-6" text-anchor="middle" font-size="12" fill="var(--ink)">${m>=1000?m/1000+' km':m+' m'}</text></g>`;
- svg.innerHTML=h};
+ svg.innerHTML=h;$('#attr').innerHTML=bm?(F.bm==='osm'?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>':'© IGN – Géoplateforme'):''};
+function tile(z,x,y){if(F.bm==='osm')return`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+ const L=F.bm==='ortho'?'ORTHOIMAGERY.ORTHOPHOTOS':'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',f=F.bm==='ortho'?'image/jpeg':'image/png';
+ return`https://data.geopf.fr/wmts?SERVICE=WMTS&amp;REQUEST=GetTile&amp;VERSION=1.0.0&amp;LAYER=${L}&amp;STYLE=normal&amp;TILEMATRIXSET=PM&amp;TILEMATRIX=${z}&amp;TILEROW=${y}&amp;TILECOL=${x}&amp;FORMAT=${encodeURIComponent(f)}`}
 
 /* details card */
 const fmt=(v,u)=>v==null||v===''?'—':`${String(v).replace('.',',')} ${u}`;
@@ -336,7 +356,7 @@ const near=()=>{if(!ip){$('#near').innerHTML='<h2>PEI les plus proches</h2><p cl
  $('#near').innerHTML=`<h2>PEI les plus proches</h2><p class="empty" style="margin-bottom:6px">Distances à vol d'oiseau depuis le point d'intervention (PEI filtrés).</p><ol>${ip.list.map(p=>`<li data-id="${esc(p.id)}"><span><span class="dot d-${p.st}"></span>${esc(p.id)} · ${esc((KIND[p.k]||'').split(' ')[0])}${p.q?' · '+esc(p.q)+' m³/h':''}</span><b>${Math.round(p.d)} m</b></li>`).join('')}</ol><button class="btn" id="clr" style="margin-top:10px">Effacer le point</button>`;
  $('#clr').onclick=()=>{ip=null;near();draw()};
  document.querySelectorAll('#near li').forEach(li=>li.onclick=()=>pick(li.dataset.id,true))};
-const setIP=(x,y)=>{const list=LIST.filter(p=>vis(p)&&p.st!=='X').map(p=>({...p,d:Math.hypot(p.x-x,p.y-y)})).sort((a,b)=>a.d-b.d).slice(0,6);ip={x,y,list};near();draw()};
+const setIP=(x,y)=>{const list=LIST.filter(p=>vis(p)&&p.st!=='X').map(p=>({...p,d:Math.hypot(p.x-x,p.y-y)})).sort((a,b)=>a.d-b.d).slice(0,6),[mx,my]=l2m(x,y);ip={x,y,mx,my,list};near();draw()};
 
 /* change log */
 const log=()=>{const a=Object.values(ED).sort((x,y)=>String(y.maj).localeCompare(String(x.maj)));
@@ -352,7 +372,7 @@ const table=()=>{const a=LIST.filter(vis).sort((p,q)=>(comName[p.insee]||'').loc
  $('#tb').innerHTML=a.map(p=>`<tr data-id="${esc(p.id)}" class="${sel&&sel.id===p.id?'sel':''}"><td><b>${esc(p.id)}</b>${p._e?' <span class="tag">'+(p._e.act==='cree'?'créé':'modifié')+'</span>':''}</td><td>${esc(KIND[p.k]||p.nat)}</td><td>${esc(comName[p.insee]||'')}</td><td>${esc([p.adr,p.cpl].filter(Boolean).join(' — '))}</td><td><span class="dot d-${p.st}"></span>${p.st==='N'?'Non conforme':ST[p.st]}</td><td class="n">${p.q?esc(p.q)+' m³/h':water(p.k)&&p.cap?(p.cap>=999?'—':esc(p.cap)+' m³'):''}</td><td class="n">${p.ps!=null&&p.ps!==''?esc(String(p.ps).replace('.',','))+' bar':''}</td><td>${esc(p.ano)}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">Aucun PEI ne correspond aux filtres.</td></tr>';
  document.querySelectorAll('#tb tr[data-id]').forEach(tr=>tr.onclick=()=>{pick(tr.dataset.id,true);wrap.scrollIntoView?.({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'})})};
 
-const pick=(id,center)=>{sel=LIST.find(p=>p.id===id)||null;if(sel&&center){V.cx=sel.x;V.cy=sel.y;V.s=Math.max(V.s,0.4)}det();draw();table()};
+const pick=(id,center)=>{sel=LIST.find(p=>p.id===id)||null;if(sel&&center){V.cx=sel.mx;V.cy=sel.my;V.s=Math.max(V.s,0.4*K)}det();draw();table()};
 const refresh=()=>{merge();kpi();stats();det();log();draw();table();if(ip)setIP(ip.x,ip.y)};
 const all=()=>{kpi();draw();table();if(ip)setIP(ip.x,ip.y);save()};
 
@@ -362,7 +382,7 @@ const toISO=d=>{const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d||'');return m?`${m[
 const toFR=d=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');return m?`${m[3]}/${m[2]}/${m[1]}`:null};
 const num=v=>v===''||v==null?null:Number(String(v).replace(',','.'));
 let byName='';try{byName=localStorage.getItem('peiBy')||''}catch(e){}
-const posTxt=()=>{const[la,lo]=toLL(draft.x,draft.y);draft.lat=la;draft.lon=lo;$('#e_pos').textContent=`${la.toFixed(5)}, ${lo.toFixed(5)} · ${comName[draft.insee]||'hors secteur'}`+(BMAP[draft.id]&&(BMAP[draft.id].x!==draft.x||BMAP[draft.id].y!==draft.y)?' (déplacé)':'')};
+const posTxt=()=>{const[la,lo]=toLL(draft.x,draft.y);draft.lat=la;draft.lon=lo;addM(draft);$('#e_pos').textContent=`${la.toFixed(5)}, ${lo.toFixed(5)} · ${comName[draft.insee]||'hors secteur'}`+(BMAP[draft.id]&&(BMAP[draft.id].x!==draft.x||BMAP[draft.id].y!==draft.y)?' (déplacé)':'')};
 const kindUI=()=>{const w=water($('#e_k').value);$('#hyd').style.display=w?'none':'';$('#wat').style.display=w?'':'none';$('#hydT').textContent=w?'Ressource en eau':'Caractéristiques hydrauliques'};
 $('#e_k').onchange=kindUI;
 function openEdit(p,isNew){
@@ -426,14 +446,14 @@ async function exportCSV(onlyEd){
 $('#bExp').onclick=()=>exportCSV(true);$('#bExpAll').onclick=()=>exportCSV(false);
 
 /* filter events */
-$('#fcom').onchange=e=>{F.com=e.target.value;const c=COM.find(c=>c.code===F.com);fit(c?bbox(c.rings):ext);all()};
+$('#fcom').onchange=e=>{F.com=e.target.value;const c=COM.find(c=>c.code===F.com);fit(c?bbox(c.mr):ext);all()};
 $('#fq').oninput=e=>{F.q=e.target.value.trim();all()};
 document.querySelectorAll('[data-st]').forEach(i=>i.onchange=()=>{F.st[i.dataset.st]=i.checked;all()});
 document.querySelectorAll('[data-ty]').forEach(i=>i.onchange=()=>{F.ty[i.dataset.ty]=i.checked;all()});
 $('#r200').onchange=e=>{F.r200=e.target.checked;all()};$('#r400').onchange=e=>{F.r400=e.target.checked;all()};$('#oEd').onchange=e=>{F.onlyEd=e.target.checked;all()};
 
 /* map events */
-const zoomAt=(f,sx,sy)=>{const[ux,uy]=U(sx,sy);V.s=Math.min(Math.max(V.s*f,0.01),3);const[nx,ny]=U(sx,sy);V.cx+=ux-nx;V.cy+=uy-ny;draw()};
+const zoomAt=(f,sx,sy)=>{const[ux,uy]=U(sx,sy);V.s=Math.min(Math.max(V.s*f,0.005),2.5);const[nx,ny]=U(sx,sy);V.cx+=ux-nx;V.cy+=uy-ny;draw()};
 $('#zin').onclick=()=>zoomAt(1.6,wrap.clientWidth/2,wrap.clientHeight/2);
 $('#zout').onclick=()=>zoomAt(1/1.6,wrap.clientWidth/2,wrap.clientHeight/2);
 $('#zall').onclick=()=>{fit(ext);draw()};
@@ -444,16 +464,17 @@ wrap.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)retur
  if(ptr.size===2&&pinch){const[a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y),r=wrap.getBoundingClientRect();zoomAt(d/pinch.d,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);pinch.d=d;moved=99}
  else if(ptr.size===1){V.cx-=dx/V.s;V.cy+=dy/V.s;draw()}});
 const up=e=>{if(!ptr.has(e.pointerId))return;ptr.delete(e.pointerId);if(ptr.size<2)pinch=null;wrap.classList.remove('drag');
- if(moved<6&&ptr.size===0){const r=wrap.getBoundingClientRect(),[x,y]=U(e.clientX-r.left,e.clientY-r.top);
+ if(moved<6&&ptr.size===0){const r=wrap.getBoundingClientRect(),[ux,uy]=U(e.clientX-r.left,e.clientY-r.top),[x,y]=m2l(ux,uy);
   if(mode){placeAt(x,y);return}
   const t=document.elementFromPoint(e.clientX,e.clientY),id=t&&t.dataset&&t.dataset.id;
   if(id)pick(id,false);else setIP(x,y)}};
 wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);pinch=null;wrap.classList.remove('drag')});
 
-ext=bbox(COM.flatMap(c=>c.rings));fit(ext);
+ext=bbox(COM.flatMap(c=>c.mr));
+$('#fbm').value=F.bm;if(!HOST)$('#bmBox').style.display='none';$('#fbm').onchange=e=>{F.bm=e.target.value;all()};fit(ext);
 const ro=new ResizeObserver(()=>draw());ro.observe(wrap);
 merge();stats();det();near();log();all();
-if(F.com){const c=COM.find(c=>c.code===F.com);if(c){fit(bbox(c.rings));draw()}}
+if(F.com){const c=COM.find(c=>c.code===F.com);if(c){fit(bbox(c.mr));draw()}}
 }
 </script>
 </body>
