@@ -2,7 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PEI Entremont">
+<meta name="theme-color" content="#c8102e">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>PEI secteur Entremont</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -34,7 +42,7 @@ header{background:var(--paper);border-bottom:4px solid var(--red)}
 .d-D{background:var(--ok)}.d-N{background:var(--nc)}.d-I{background:var(--ko)}.d-X{background:var(--del)}
 main{max-width:1400px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;padding:18px max(2vw,10px)}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:10px}
-.mapwrap{position:relative;height:min(76vh,760px);min-height:420px;overflow:hidden;touch-action:none;cursor:grab;border-radius:10px}
+.mapwrap{position:relative;height:min(76vh,760px);height:min(76dvh,760px);-webkit-user-select:none;-webkit-touch-callout:none;min-height:420px;overflow:hidden;touch-action:none;cursor:grab;border-radius:10px}
 .mapwrap.drag{cursor:grabbing}.mapwrap.place{cursor:crosshair;outline:3px solid var(--red);outline-offset:-3px}
 #map{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none}
 .tools{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
@@ -97,7 +105,23 @@ dialog::backdrop{background:rgba(10,12,15,.55)}
 .toast.on{opacity:1}
 pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){.toast{transition:none}}
-@media(max-width:900px){main{grid-template-columns:minmax(0,1fr)}.mapwrap{height:62vh}}
+@media(max-width:900px){main{grid-template-columns:minmax(0,1fr)}.mapwrap{height:64vh;height:68dvh;min-height:360px}}
+button,a,label,select,summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+header.band{padding-top:max(clamp(18px,3vw,36px),env(safe-area-inset-top))}
+footer{padding-bottom:max(32px,env(safe-area-inset-bottom))}
+.toast{bottom:max(18px,env(safe-area-inset-bottom))}
+.peek{position:absolute;left:8px;right:8px;bottom:8px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.25);padding:10px 12px;display:none;z-index:2}
+.peek.on{display:block}
+.peek .t{display:flex;justify-content:space-between;gap:8px;align-items:start}
+.peek h3{margin:0;font-size:21px}.peek p{margin:2px 0 8px;font-size:14px;color:var(--mute)}
+.peek .row{display:flex;gap:8px;flex-wrap:wrap}.peek .row>*{flex:1 1 30%;justify-content:center;text-align:center}
+.peek .x{border:0;background:none;font-size:22px;min-width:44px;min-height:40px;color:var(--mute);cursor:pointer}
+.peek a,.peek button.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none;font:600 15px Barlow}
+.peek .pri{background:var(--red);border-color:var(--red);color:#fff}
+@media(min-width:901px){.peek{display:none!important}}
+@media(max-width:900px){.wrap-peek .hint,.wrap-peek .attr{display:none}}
+@media(max-width:600px){h1{font-size:26px}.sub{font-size:13px}.kpi{gap:14px}.acts .btn{flex:1 1 auto}.band{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}}
 @media(max-width:600px){.leg{display:none}.hint{max-width:calc(100% - 80px)}.grid2,.grid3{grid-template-columns:minmax(0,1fr)}table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:7em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:6.5em;margin-inline-start:-7em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}.kpi div{font-size:28px}}
 </style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
@@ -121,7 +145,7 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
 
 <main>
  <section class="card mapwrap" id="wrap" aria-label="Carte du secteur">
-  <svg id="map" role="img" aria-label="Carte des points d'eau incendie"></svg>
+  <svg id="map" role="img" aria-label="Carte des points d'eau incendie"><g id="tl"></g><g id="ov"></g></svg>
   <div class="leg" aria-hidden="true">
    <div><span class="dot d-D"></span>Disponible</div>
    <div><span class="dot d-N"></span>Non conforme</div>
@@ -130,13 +154,15 @@ pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}
    <div><svg width="12" height="12" style="vertical-align:-1px;margin-right:6px"><rect x="1" y="1" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Point d'eau / réserve</div>
    <div><svg width="14" height="14" style="vertical-align:-2px;margin-right:4px"><circle cx="7" cy="7" r="6" fill="none" stroke="#c8102e" stroke-width="1.6" stroke-dasharray="3 2"/></svg>Modifié / créé</div>
   </div>
-  <div class="banner" id="banner"><span id="bannerT"></span><button id="bannerX">Annuler</button></div>
+  <div class="banner" id="banner"><span id="bannerT"></span><button id="bannerG" style="display:none">Ma position</button><button id="bannerX">Annuler</button></div>
   <div class="tools">
    <button id="zin" aria-label="Zoomer">+</button>
    <button id="zout" aria-label="Dézoomer">−</button>
    <button id="zall" aria-label="Vue d'ensemble" style="font-size:15px">⤢</button>
+   <button id="gps" aria-label="Ma position" style="font-size:18px;display:none">◎</button>
   </div>
   <div class="attr" id="attr"></div>
+  <div class="peek" id="peek" aria-live="polite"></div>
   <div class="hint" id="hint">Touchez un PEI pour sa fiche, ou un endroit vide pour trouver les PEI les plus proches.</div>
  </section>
 
@@ -307,12 +333,20 @@ let pendingFit=null;const fit=e=>{const W=wrap.clientWidth,H=wrap.clientHeight;i
 const P=(x,y)=>[(x-V.cx)*V.s+wrap.clientWidth/2,-(y-V.cy)*V.s+wrap.clientHeight/2];
 const U=(sx,sy)=>[(sx-wrap.clientWidth/2)/V.s+V.cx,-(sy-wrap.clientHeight/2)/V.s+V.cy];
 const col=st=>`var(--${st==='D'?'ok':st==='N'?'nc':st==='X'?'del':'ko'})`;
+const TL=$('#tl'),OV=$('#ov'),NS='http://www.w3.org/2000/svg',tcache=new Map();
+const tiles=(W,H)=>{const want=new Set();
+ if(F.bm!=='none'){const z=Math.max(0,Math.min(19,Math.round(Math.log2(2*PR*V.s/256)))),n=2**z,sz=2*PR/n,[ux0,uy1]=U(0,0),[ux1,uy0]=U(W,H);
+  const tx0=Math.floor((ux0+PR)/sz),tx1=Math.floor((ux1+PR)/sz),ty0=Math.floor((PR-uy1)/sz),ty1=Math.floor((PR-uy0)/sz),px=sz*V.s;
+  if((tx1-tx0+1)*(ty1-ty0+1)<=120)for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++){if(ty<0||ty>=n)continue;
+   const u=tile(z,((tx%n)+n)%n,ty),[a,b]=P(-PR+tx*sz,PR-ty*sz);want.add(u);let im=tcache.get(u);
+   if(!im){im=document.createElementNS(NS,'image');im.setAttribute('href',u);im.setAttribute('preserveAspectRatio','none');TL.appendChild(im);tcache.set(u,im)}
+   im.setAttribute('x',a.toFixed(1));im.setAttribute('y',b.toFixed(1));im.setAttribute('width',(px+.6).toFixed(1));im.setAttribute('height',(px+.6).toFixed(1))}}
+ for(const[u,im]of tcache)if(!want.has(u)){im.remove();tcache.delete(u)}};
+let raf=0;const req=()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()})};
 const draw=()=>{
  const W=wrap.clientWidth,H=wrap.clientHeight;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
  let h='';const sp=V.s/K,bm=F.bm!=='none';
- if(bm){const z=Math.max(0,Math.min(19,Math.round(Math.log2(2*PR*V.s/256)))),n=2**z,sz=2*PR/n,[ux0,uy1]=U(0,0),[ux1,uy0]=U(W,H);
-  const tx0=Math.floor((ux0+PR)/sz),tx1=Math.floor((ux1+PR)/sz),ty0=Math.floor((PR-uy1)/sz),ty1=Math.floor((PR-uy0)/sz),px=sz*V.s;
-  if((tx1-tx0+1)*(ty1-ty0+1)<=120)for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++){if(ty<0||ty>=n)continue;const[a,b]=P(-PR+tx*sz,PR-ty*sz);h+=`<image href="${tile(z,((tx%n)+n)%n,ty)}" x="${a.toFixed(1)}" y="${b.toFixed(1)}" width="${(px+.6).toFixed(1)}" height="${(px+.6).toFixed(1)}" preserveAspectRatio="none"/>`}}
+ tiles(W,H);
  COM.forEach(c=>{const d=c.mr.map(r=>'M'+r.map(([x,y])=>P(x,y).map(v=>v.toFixed(1)).join(',')).join('L')+'Z').join('');
   h+=`<path d="${d}" fill="${bm?(F.com===c.code?'rgba(255,190,120,.18)':'none'):F.com===c.code?'var(--comsel)':'var(--com)'}" stroke="${bm?'#7a1020':'var(--edge)'}" stroke-width="${F.com===c.code?2.6:bm?1.6:1.2}" stroke-dasharray="${bm?'7 4':''}" stroke-linejoin="round"/>`});
  const pts=LIST.filter(vis);
@@ -329,7 +363,8 @@ const draw=()=>{
  if(ip){const[a,b]=P(ip.mx,ip.my);h+=`<g pointer-events="none" stroke="var(--red)" stroke-width="3"><line x1="${a-9}" y1="${b}" x2="${a+9}" y2="${b}"/><line x1="${a}" y1="${b-9}" x2="${a}" y2="${b+9}"/></g><circle cx="${a}" cy="${b}" r="13" fill="none" stroke="var(--red)" stroke-width="2" pointer-events="none"/>`}
  const m=[50,100,200,500,1000,2000,5000].find(v=>v*sp>70)||5000,L=m*sp;
  h+=`<g transform="translate(${W-L-16},${H-18})"><rect x="-6" y="-20" width="${L+12}" height="30" rx="5" fill="var(--paper)" opacity=".85"/><line x1="0" y1="0" x2="${L}" y2="0" stroke="var(--ink)" stroke-width="3"/><line x1="0" y1="-5" x2="0" y2="3" stroke="var(--ink)" stroke-width="2"/><line x1="${L}" y1="-5" x2="${L}" y2="3" stroke="var(--ink)" stroke-width="2"/><text x="${L/2}" y="-6" text-anchor="middle" font-size="12" fill="var(--ink)">${m>=1000?m/1000+' km':m+' m'}</text></g>`;
- svg.innerHTML=h;$('#attr').innerHTML=bm?(F.bm==='osm'?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>':'© IGN – Géoplateforme'):''};
+ if(me){const[a,b]=P(me.mx,me.my);h+=`<circle cx="${a}" cy="${b}" r="${Math.max(me.acc*sp,0)}" fill="rgba(0,122,255,.12)" stroke="rgba(0,122,255,.4)" pointer-events="none"/><circle cx="${a}" cy="${b}" r="7" fill="#007aff" stroke="#fff" stroke-width="2.5" pointer-events="none"/>`}
+ OV.innerHTML=h;peek();$('#attr').innerHTML=bm?(F.bm==='osm'?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>':'© IGN – Géoplateforme'):''};
 function tile(z,x,y){if(F.bm==='osm')return`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
  const L=F.bm==='ortho'?'ORTHOIMAGERY.ORTHOPHOTOS':'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',f=F.bm==='ortho'?'image/jpeg':'image/png';
  return`https://data.geopf.fr/wmts?SERVICE=WMTS&amp;REQUEST=GetTile&amp;VERSION=1.0.0&amp;LAYER=${L}&amp;STYLE=normal&amp;TILEMATRIXSET=PM&amp;TILEMATRIX=${z}&amp;TILEROW=${y}&amp;TILECOL=${x}&amp;FORMAT=${encodeURIComponent(f)}`}
@@ -347,7 +382,7 @@ const det=()=>{const p=sel;if(!p){$('#det').innerHTML='<h2>Fiche PEI</h2><p clas
  <dl>${rows.map(([a,b])=>`<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl>
  ${p.ano?`<p style="margin:0 0 6px"><b>Anomalies :</b> ${esc(p.ano)}</p>`:''}
  ${e?`<p style="margin:0 0 6px;color:var(--red)"><b>${e.act==='cree'?'Création':'Modifié : '+esc(diff(p).join(', ')||'aucun champ')}</b>${e.obs?' · '+esc(e.obs):''}<br><small style="color:var(--mute)">${esc(e.par||'')} ${e.maj?'· '+esc(new Date(e.maj).toLocaleString('fr-FR')):''}</small></p>`:''}
- <div class="links"><button class="btn pri" id="dEdit">Modifier</button><a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}" target="_blank" rel="noopener">Google Maps</a><a href="https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes" target="_blank" rel="noopener">Waze</a><button class="btn" id="cp">Copier GPS</button></div>`;
+ <div class="links"><button class="btn pri" id="dEdit">Modifier</button><a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}" target="_blank" rel="noopener">Google Maps</a><a href="https://maps.apple.com/?daddr=${p.lat},${p.lon}&dirflg=d" target="_blank" rel="noopener">Plans</a><a href="https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes" target="_blank" rel="noopener">Waze</a><button class="btn" id="cp">Copier GPS</button></div>`;
  $('#dEdit').onclick=()=>openEdit(p);
  $('#cp').onclick=async ev=>{try{await navigator.clipboard.writeText(`${p.lat}, ${p.lon}`);ev.target.textContent='Copié'}catch(err){ev.target.textContent=`${p.lat}, ${p.lon}`}}};
 
@@ -372,6 +407,23 @@ const table=()=>{const a=LIST.filter(vis).sort((p,q)=>(comName[p.insee]||'').loc
  $('#tb').innerHTML=a.map(p=>`<tr data-id="${esc(p.id)}" class="${sel&&sel.id===p.id?'sel':''}"><td><b>${esc(p.id)}</b>${p._e?' <span class="tag">'+(p._e.act==='cree'?'créé':'modifié')+'</span>':''}</td><td>${esc(KIND[p.k]||p.nat)}</td><td>${esc(comName[p.insee]||'')}</td><td>${esc([p.adr,p.cpl].filter(Boolean).join(' — '))}</td><td><span class="dot d-${p.st}"></span>${p.st==='N'?'Non conforme':ST[p.st]}</td><td class="n">${p.q?esc(p.q)+' m³/h':water(p.k)&&p.cap?(p.cap>=999?'—':esc(p.cap)+' m³'):''}</td><td class="n">${p.ps!=null&&p.ps!==''?esc(String(p.ps).replace('.',','))+' bar':''}</td><td>${esc(p.ano)}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">Aucun PEI ne correspond aux filtres.</td></tr>';
  document.querySelectorAll('#tb tr[data-id]').forEach(tr=>tr.onclick=()=>{pick(tr.dataset.id,true);wrap.scrollIntoView?.({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'})})};
 
+const narrow=()=>matchMedia('(max-width:900px)').matches;
+function peek(){const el=$('#peek'),p=sel;const on=!!(p&&narrow()&&!mode);el.classList.toggle('on',on);wrap.classList.toggle('wrap-peek',on);if(!on)return;
+ if(el.dataset.id===p.id+'|'+(p._e?.maj||''))return;el.dataset.id=p.id+'|'+(p._e?.maj||'');
+ const info=[KIND[p.k]||p.nat,!water(p.k)&&p.q?p.q+' m³/h':'',!water(p.k)&&p.ps!=null&&p.ps!==''?String(p.ps).replace('.',',')+' bar':'',water(p.k)&&p.cap&&p.cap<999?p.cap+' m³':''].filter(Boolean).join(' · ');
+ const dist=me?` · à ${Math.round(Math.hypot(p.x-me.x,p.y-me.y))} m`:'';
+ el.innerHTML=`<div class="t"><div><h3>${esc(p.id)} <span class="badge b-${p.st}" style="font-size:12px;vertical-align:3px">${p.st==='N'?'Non conforme':ST[p.st]}</span></h3><p>${esc(info)}${esc(dist)}<br>${esc([p.adr,comName[p.insee]].filter(Boolean).join(', '))}</p></div><button class="x" aria-label="Fermer">×</button></div>
+ <div class="row"><button class="btn pri" data-a="edit">Modifier</button><a href="https://maps.apple.com/?daddr=${p.lat},${p.lon}&dirflg=d" target="_blank" rel="noopener">Plans</a><a href="https://waze.com/ul?ll=${p.lat},${p.lon}&navigate=yes" target="_blank" rel="noopener">Waze</a><button class="btn" data-a="more">Fiche</button></div>`;
+ el.querySelector('.x').onclick=()=>{sel=null;el.dataset.id='';det();draw();table()};
+ el.querySelector('[data-a=edit]').onclick=()=>openEdit(sel);
+ el.querySelector('[data-a=more]').onclick=()=>$('#det').scrollIntoView({behavior:'smooth',block:'start'})}
+let me=null,watch=null;
+const gpsOK=HOST&&'geolocation' in navigator&&window.isSecureContext;
+if(gpsOK){$('#gps').style.display='';$('#gps').onclick=()=>{
+ if(watch==null){toast('Recherche de votre position…');watch=navigator.geolocation.watchPosition(pos=>{const la=pos.coords.latitude,lo=pos.coords.longitude,[x,y]=fromLL(la,lo),[mx,my]=merc(la,lo);const first=!me;me={x,y,mx,my,lat:la,lon:lo,acc:pos.coords.accuracy||0};
+   $('#bannerG').style.display=mode==='new'?'':'none';if(first){V.cx=mx;V.cy=my;V.s=Math.max(V.s,0.5*K);setIP(x,y);if(!comAt(x,y))toast('Vous êtes hors du secteur')}else req()},
+  err=>{toast(err.code===1?'Localisation refusée : Réglages > Safari > Position':'Position introuvable');navigator.geolocation.clearWatch(watch);watch=null},{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
+ else if(me){V.cx=me.mx;V.cy=me.my;setIP(me.x,me.y)}}}
 const pick=(id,center)=>{sel=LIST.find(p=>p.id===id)||null;if(sel&&center){V.cx=sel.mx;V.cy=sel.my;V.s=Math.max(V.s,0.4*K)}det();draw();table()};
 const refresh=()=>{merge();kpi();stats();det();log();draw();table();if(ip)setIP(ip.x,ip.y)};
 const all=()=>{kpi();draw();table();if(ip)setIP(ip.x,ip.y);save()};
@@ -418,9 +470,10 @@ $('#frm').onsubmit=async ev=>{ev.preventDefault();const d=draft;if(!d)return;
  catch(err){$('#e_save').disabled=false;$('#e_err').textContent=err&&err.code==='quota_exceeded'?'Espace d\'enregistrement plein.':err&&err.code==='invalid_argument'&&store==='db'?'Vous n\'avez pas le droit d\'enregistrer sur cette page (lecture seule).':'Échec de l\'enregistrement, réessayez.'}};
 
 /* placement modes */
-const setMode=m=>{mode=m;wrap.classList.toggle('place',!!m);$('#banner').classList.toggle('on',!!m);
+const setMode=m=>{mode=m;$('#bannerG').style.display=m==='new'&&me?'':'none';wrap.classList.toggle('place',!!m);$('#banner').classList.toggle('on',!!m);
  $('#bannerT').textContent=m==='new'?'Touchez la carte à l\'emplacement du nouveau PEI':m==='move'?'Touchez le nouvel emplacement du PEI':'';
  if(!m&&draft&&!dlg.open)draft=null};
+$('#bannerG').onclick=()=>{if(me)placeAt(me.x,me.y)};
 $('#bannerX').onclick=()=>{const was=mode,d=draft;setMode(null);if(was==='move'&&d){draft=d;dlg.showModal()}};
 $('#bNew').onclick=()=>{setMode('new');wrap.scrollIntoView?.({block:'center'})};
 const placeAt=(x,y)=>{const insee=comAt(x,y);if(!insee){toast('Hors des 6 communes du secteur');return}
@@ -440,6 +493,7 @@ async function exportCSV(onlyEd){
  if(onlyEd&&!rows.length){toast('Aucune modification à exporter');return}
  const csv=buildCSV(rows),d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
  const name=onlyEd?`PEI_modifications_secteur_Entremont_${stamp}.csv`:`PEI_secteur_Entremont_${stamp}.csv`;
+ if(HOST&&navigator.canShare){try{const f=new File([csv],name,{type:'text/csv'});if(navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name,text:onlyEd?'Modifications PEI – secteur de Saint-Pierre-d\'Entremont':'PEI – secteur de Saint-Pierre-d\'Entremont'});toast('Fichier partagé');return}}catch(err){if(err&&err.name==='AbortError'){toast('Partage annulé');return}}}
  if(dl){try{await dl.save({filename:name,data:csv});toast('Fichier enregistré');return}catch(err){if(err&&err.code==='declined'){toast('Téléchargement annulé');return}if(err&&err.code==='rate_limited'){toast('Patientez un instant puis réessayez');return}}}
  if(typeof claude==='undefined'){try{const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Fichier téléchargé');return}catch(e){}}
  try{await navigator.clipboard.writeText(csv);toast('Téléchargement indisponible ici : CSV copié dans le presse-papiers')}catch(e){toast('Export impossible dans cette vue')}}
@@ -453,7 +507,7 @@ document.querySelectorAll('[data-ty]').forEach(i=>i.onchange=()=>{F.ty[i.dataset
 $('#r200').onchange=e=>{F.r200=e.target.checked;all()};$('#r400').onchange=e=>{F.r400=e.target.checked;all()};$('#oEd').onchange=e=>{F.onlyEd=e.target.checked;all()};
 
 /* map events */
-const zoomAt=(f,sx,sy)=>{const[ux,uy]=U(sx,sy);V.s=Math.min(Math.max(V.s*f,0.005),2.5);const[nx,ny]=U(sx,sy);V.cx+=ux-nx;V.cy+=uy-ny;draw()};
+const zoomAt=(f,sx,sy)=>{const[ux,uy]=U(sx,sy);V.s=Math.min(Math.max(V.s*f,0.005),2.5);const[nx,ny]=U(sx,sy);V.cx+=ux-nx;V.cy+=uy-ny;req()};
 $('#zin').onclick=()=>zoomAt(1.6,wrap.clientWidth/2,wrap.clientHeight/2);
 $('#zout').onclick=()=>zoomAt(1/1.6,wrap.clientWidth/2,wrap.clientHeight/2);
 $('#zall').onclick=()=>{fit(ext);draw()};
@@ -462,12 +516,15 @@ const ptr=new Map();let moved=0,pinch=null;
 wrap.addEventListener('pointerdown',e=>{if(e.target.closest('.tools,.banner'))return;wrap.setPointerCapture?.(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;if(ptr.size===2){const[a,b]=[...ptr.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)}}else wrap.classList.add('drag')});
 wrap.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)return;const dx=e.clientX-o.x,dy=e.clientY-o.y;o.x=e.clientX;o.y=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
  if(ptr.size===2&&pinch){const[a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y),r=wrap.getBoundingClientRect();zoomAt(d/pinch.d,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);pinch.d=d;moved=99}
- else if(ptr.size===1){V.cx-=dx/V.s;V.cy+=dy/V.s;draw()}});
+ else if(ptr.size===1){V.cx-=dx/V.s;V.cy+=dy/V.s;req()}});
 const up=e=>{if(!ptr.has(e.pointerId))return;ptr.delete(e.pointerId);if(ptr.size<2)pinch=null;wrap.classList.remove('drag');
- if(moved<6&&ptr.size===0){const r=wrap.getBoundingClientRect(),[ux,uy]=U(e.clientX-r.left,e.clientY-r.top),[x,y]=m2l(ux,uy);
+ if(moved<(e.pointerType==='mouse'?6:12)&&ptr.size===0){const r=wrap.getBoundingClientRect(),[ux,uy]=U(e.clientX-r.left,e.clientY-r.top),[x,y]=m2l(ux,uy);
   if(mode){placeAt(x,y);return}
-  const t=document.elementFromPoint(e.clientX,e.clientY),id=t&&t.dataset&&t.dataset.id;
-  if(id)pick(id,false);else setIP(x,y)}};
+  const sx=e.clientX-r.left,sy=e.clientY-r.top;let best=null,bd=e.pointerType==='mouse'?12:24;
+  LIST.filter(vis).forEach(p=>{const[a,b]=P(p.mx,p.my),dd=Math.hypot(a-sx,b-sy);if(dd<bd){bd=dd;best=p}});
+  if(best)pick(best.id,false);else{sel=null;det();table();setIP(x,y)}}};
+wrap.addEventListener('gesturestart',e=>e.preventDefault());wrap.addEventListener('gesturechange',e=>e.preventDefault());
+wrap.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);pinch=null;wrap.classList.remove('drag')});
 
 ext=bbox(COM.flatMap(c=>c.mr));

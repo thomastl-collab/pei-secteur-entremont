@@ -17,6 +17,16 @@ Carte et outil de suivi des points d'eau incendie (DECI) de Saint-Pierre-d'Entre
 
 Les modifications saisies sur le site sont enregistrées **dans le navigateur de l'appareil utilisé**. Elles ne sont ni partagées ni envoyées : il faut exporter le CSV et le transmettre au SDIS.
 
+## Sur iPhone
+
+- Ouvrir le lien dans **Safari**, puis Partager → **Sur l'écran d'accueil** : l'app s'ouvre alors en plein écran comme une application.
+- Bouton **◎** : affiche votre position GPS et les PEI les plus proches (autoriser la localisation pour Safari).
+- Toucher un PEI : fiche résumée en bas de la carte avec **Modifier**, **Plans** et **Waze**.
+- « + Nouveau PEI » puis **Ma position** : crée un PEI à l'endroit où vous vous trouvez.
+- Les exports CSV ouvrent la feuille de partage (Mail, AirDrop, Fichiers…) pour l'envoyer directement au SDIS.
+
+⚠️ Les corrections sont stockées dans le navigateur. L'app ajoutée à l'écran d'accueil et Safari ont chacune leur propre stockage : utiliser toujours le même accès, et exporter le CSV avant d'effacer les données de Safari.
+
 ## Sources
 
 | Données | Source | Licence |
